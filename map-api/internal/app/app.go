@@ -1,20 +1,43 @@
 package app
 
 import (
-	"fmt"
-	"html"
+	strs "go-mini-projects/map-api/internal/stores"
 	"log"
 	"net/http"
 )
 
-//type M
+var stores *strs.Stores
 
-func SetupRoutes() {
-	//http.Handle("/foo", fooHandler)
+func SetupApp() {
+	SetupStores()
+	StartServer()
+}
 
-	http.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+func SetupStores() {
+	stores = strs.Create()
+	return
+}
+
+func StartServer() {
+	http.Handle("/insert", &Handler{
+		methodHandlers: map[string]*MethodHandler{
+			http.MethodPost: &MethodHandler{
+				validateRequest: validateInsertParams,
+				handleRequest:   insert,
+			},
+		},
 	})
+
+	http.Handle("/generate_store", &Handler{
+		methodHandlers: map[string]*MethodHandler{
+			http.MethodPost: &MethodHandler{
+				validateRequest: nil,
+				handleRequest:   generateStore,
+			},
+		},
+	})
+
+	//http.Handle("/test", testHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

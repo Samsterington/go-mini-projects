@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	app.SetupRoutes()
+	app.SetupApp()
 }

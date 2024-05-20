@@ -24,11 +24,15 @@ func (k *KeyValueStore) Insert(key int, value string) {
 	k.store[key] = value
 }
 
-func (k *KeyValueStore) Read(key int) (string, bool) {
+func (k *KeyValueStore) Read(key int) *string {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	value, exists := k.store[key]
-	return value, exists
+	if !exists {
+		return nil
+	}
+
+	return &value
 }
 
 func (k *KeyValueStore) ReadRange(start int, end int) (map[int]string, error) {
@@ -44,11 +48,11 @@ func (k *KeyValueStore) ReadRange(start int, end int) (map[int]string, error) {
 
 	subStore := make(map[int]string)
 	for i := 0; i < rangeLength; i++ {
-		value, exists := k.Read(i)
-		if !exists {
+		value := k.Read(i)
+		if value == nil {
 			continue
 		}
-		subStore[i] = value
+		subStore[i] = *value
 	}
 	return subStore, nil
 }
