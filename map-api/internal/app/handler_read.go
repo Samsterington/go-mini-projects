@@ -1,13 +1,18 @@
 package app
 
 import (
-	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 )
 
-func validateReadParams(r *http.Request) (map[string]interface{}, error) {
+type readParams struct {
+	key     int
+	storeId string
+}
+
+func validateReadParams(r *http.Request) (interface{}, error) {
 	queryParams := r.URL.Query()
 	keyString := queryParams.Get("key")
 	if keyString == "" {
@@ -23,24 +28,29 @@ func validateReadParams(r *http.Request) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("missing query param 'store_id'")
 	}
 
-	return map[string]interface{}{
-		"key":      key,
-		"store_id": storeId,
+	return readParams{
+		key,
+		storeId,
 	}, nil
 
 }
 
-func read(w http.ResponseWriter, r *http.Request, params map[string]interface{}) error {
-	value, err := stores.Read(params["store_id"].(string), params["key"].(int))
-	if err != nil {
-		return fmt.Errorf("failed to read from store %s: %w", params["store_id"].(string), err)
+func read(w http.ResponseWriter, r *http.Request, params interface{}) error {
+	if typedParams, ok := params.(readParams); !ok {
+		log.Printf("insert_hanlder bug: params recieved is not of type insertParams instead got %T: %v", params, params)
+		return fmt.Errorf("server error")
+	} else {
+		value, err := stores.Read(typedParams.storeId, typedParams.key)
+		if err != nil {
+			return fmt.Errorf("failed to read from store %s: %w", typedParams.storeId, err)
+		}
+		if value == nil {
+			return fmt.Errorf("no value found for key: %d", typedParams.key)
+		}
+		_, err = w.Write([]byte(*value))
+		if err != nil {
+			return fmt.Errorf("failed writing value to http writer: %w", err)
+		}
+		return nil
 	}
-	if value == nil {
-		return fmt.Errorf("no value found for key: %d", params["key"].(int))
-	}
-	_, err = w.Write([]byte(*value))
-	if err != nil {
-		return errors.New("failed writing value to http writer")
-	}
-	return nil
 }

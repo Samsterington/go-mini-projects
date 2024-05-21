@@ -14,8 +14,8 @@ type MethodHandler struct {
 	handleRequest   HandlerFunc
 }
 
-type ValidatorFunc func(r *http.Request) (map[string]interface{}, error)
-type HandlerFunc func(w http.ResponseWriter, r *http.Request, params map[string]interface{}) error
+type ValidatorFunc func(r *http.Request) (interface{}, error)
+type HandlerFunc func(w http.ResponseWriter, r *http.Request, params interface{}) error
 
 func (h *Handler) SetMethodHandler(method string, validateRequest ValidatorFunc, handleRequest HandlerFunc) {
 	h.methodHandlers[method] = &MethodHandler{
@@ -28,7 +28,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if methodHandler, ok := h.methodHandlers[r.Method]; !ok {
 		http.Error(w, fmt.Sprintf("unsupported method: %s", r.Method), http.StatusBadRequest)
 	} else {
-		var params map[string]interface{}
+		var params interface{}
 		var err error
 		if methodHandler.validateRequest != nil {
 			params, err = methodHandler.validateRequest(r)

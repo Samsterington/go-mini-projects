@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func generateStore(w http.ResponseWriter, r *http.Request, params map[string]interface{}) error {
+func generateStore(w http.ResponseWriter, r *http.Request, params interface{}) error {
 	storeId := stores.GenerateNewStore()
 	_, err := w.Write([]byte(storeId))
 	if err != nil {

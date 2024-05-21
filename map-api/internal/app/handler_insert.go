@@ -3,11 +3,18 @@ package app
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 )
 
-func validateInsertParams(r *http.Request) (map[string]interface{}, error) {
+type insertParams struct {
+	key     int
+	storeId string
+	value   string
+}
+
+func validateInsertParams(r *http.Request) (interface{}, error) {
 	queryParams := r.URL.Query()
 	keyString := queryParams.Get("key")
 	if keyString == "" {
@@ -23,29 +30,34 @@ func validateInsertParams(r *http.Request) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("missing query param 'store_id'")
 	}
 
-	valueBytes := make([]byte, r.ContentLength)
-	_, err = r.Body.Read(valueBytes)
-	if err != nil && err != io.EOF {
+	valueBytes, err := io.ReadAll(r.Body)
+	if err != nil {
 		return nil, fmt.Errorf("couldn't read request body: %w", err)
 	}
 	value := string(valueBytes)
 
-	return map[string]interface{}{
-		"key":      key,
-		"store_id": storeId,
-		"value":    value,
+	return insertParams{
+		key,
+		storeId,
+		value,
 	}, nil
 
 }
 
-func insert(w http.ResponseWriter, r *http.Request, params map[string]interface{}) error {
-	err := stores.Insert(
-		params["store_id"].(string),
-		params["key"].(int),
-		params["value"].(string),
-	)
-	if err != nil {
-		return fmt.Errorf("failed inserting to store %s: %w", params["store_id"].(string), err)
+func insert(w http.ResponseWriter, r *http.Request, params interface{}) error {
+	if typedParams, ok := params.(insertParams); !ok {
+		log.Printf("insert_hanlder bug: params recieved is not of type insertParams instead got %T: %v", params, params)
+		return fmt.Errorf("server error")
+	} else {
+
+		err := stores.Insert(
+			typedParams.storeId,
+			typedParams.key,
+			typedParams.value,
+		)
+		if err != nil {
+			return fmt.Errorf("failed inserting to store %s: %w", typedParams.storeId, err)
+		}
+		return nil
 	}
-	return nil
 }
