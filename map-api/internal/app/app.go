@@ -37,6 +37,15 @@ func StartServer() {
 		},
 	})
 
+	http.Handle("/read", &Handler{
+		methodHandlers: map[string]*MethodHandler{
+			http.MethodGet: &MethodHandler{
+				validateRequest: validateReadParams,
+				handleRequest:   read,
+			},
+		},
+	})
+
 	//http.Handle("/test", testHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))

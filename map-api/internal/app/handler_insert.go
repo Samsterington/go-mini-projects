@@ -1,9 +1,8 @@
 package app
 
 import (
-	"errors"
 	"fmt"
-	"log"
+	"io"
 	"net/http"
 	"strconv"
 )
@@ -24,11 +23,10 @@ func validateInsertParams(r *http.Request) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("missing query param 'store_id'")
 	}
 
-	valueBytes := make([]byte, 0)
-	n, err := r.Body.Read(valueBytes)
-	log.Printf("bytes read: %d", n)
-	if err != nil {
-		return nil, errors.New("couldn't read request body")
+	valueBytes := make([]byte, r.ContentLength)
+	_, err = r.Body.Read(valueBytes)
+	if err != nil && err != io.EOF {
+		return nil, fmt.Errorf("couldn't read request body: %w", err)
 	}
 	value := string(valueBytes)
 
@@ -41,9 +39,13 @@ func validateInsertParams(r *http.Request) (map[string]interface{}, error) {
 }
 
 func insert(w http.ResponseWriter, r *http.Request, params map[string]interface{}) error {
-	err := stores.Insert(params["store_id"].(string), params["key"].(int), params["value"].(string))
+	err := stores.Insert(
+		params["store_id"].(string),
+		params["key"].(int),
+		params["value"].(string),
+	)
 	if err != nil {
-		return errors.New("writing store id to http writer")
+		return fmt.Errorf("failed inserting to store %s: %w", params["store_id"].(string), err)
 	}
 	return nil
 }

@@ -34,11 +34,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			params, err = methodHandler.validateRequest(r)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
 			}
 		}
 		err = methodHandler.handleRequest(w, r, params)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}
 }
