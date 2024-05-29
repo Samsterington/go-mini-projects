@@ -44,13 +44,13 @@ func validateInsertParams(r *http.Request) (interface{}, error) {
 
 }
 
-func insert(w http.ResponseWriter, r *http.Request, params interface{}) error {
+func (s *server) insert(w http.ResponseWriter, r *http.Request, params interface{}) error {
 	if typedParams, ok := params.(insertParams); !ok {
 		log.Printf("insert_hanlder bug: params recieved is not of type insertParams instead got %T: %v", params, params)
 		return fmt.Errorf("server error")
 	} else {
 
-		err := stores.Insert(
+		err := s.stores.Insert(
 			typedParams.storeId,
 			typedParams.key,
 			typedParams.value,

@@ -35,12 +35,12 @@ func validateReadParams(r *http.Request) (interface{}, error) {
 
 }
 
-func read(w http.ResponseWriter, r *http.Request, params interface{}) error {
+func (s *server) read(w http.ResponseWriter, r *http.Request, params interface{}) error {
 	if typedParams, ok := params.(readParams); !ok {
 		log.Printf("insert_hanlder bug: params recieved is not of type insertParams instead got %T: %v", params, params)
 		return fmt.Errorf("server error")
 	} else {
-		value, err := stores.Read(typedParams.storeId, typedParams.key)
+		value, err := s.stores.Read(typedParams.storeId, typedParams.key)
 		if err != nil {
 			return fmt.Errorf("failed to read from store %s: %w", typedParams.storeId, err)
 		}

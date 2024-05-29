@@ -6,42 +6,45 @@ import (
 	"net/http"
 )
 
-var stores *strs.Stores
+type server struct {
+	stores *strs.Stores
+}
 
 func SetupApp() {
-	SetupStores()
-	StartServer()
+	svr := &server{
+		stores: SetupStores(),
+	}
+	svr.StartServer()
 }
 
-func SetupStores() {
-	stores = strs.Create()
-	return
+func SetupStores() *strs.Stores {
+	return strs.Create()
 }
 
-func StartServer() {
+func (s *server) StartServer() {
 	http.Handle("/insert", &Handler{
 		methodHandlers: map[string]*MethodHandler{
-			http.MethodPost: &MethodHandler{
+			http.MethodPost: {
 				validateRequest: validateInsertParams,
-				handleRequest:   insert,
+				handleRequest:   s.insert,
 			},
 		},
 	})
 
 	http.Handle("/generate_store", &Handler{
 		methodHandlers: map[string]*MethodHandler{
-			http.MethodPost: &MethodHandler{
+			http.MethodPost: {
 				validateRequest: nil,
-				handleRequest:   generateStore,
+				handleRequest:   s.generateStore,
 			},
 		},
 	})
 
 	http.Handle("/read", &Handler{
 		methodHandlers: map[string]*MethodHandler{
-			http.MethodGet: &MethodHandler{
+			http.MethodGet: {
 				validateRequest: validateReadParams,
-				handleRequest:   read,
+				handleRequest:   s.read,
 			},
 		},
 	})
